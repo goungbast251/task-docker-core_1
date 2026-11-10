@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Task Management</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 40px 20px;
+            background: #f4f6fa;
+            font-family: Arial, sans-serif;
+            color: #222;
+        }
+
+        main {
+            max-width: 760px;
+            margin: auto;
+        }
+
+        h1 { color: #183153; }
+
+        form, .task {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font: inherit;
+        }
+
+        button {
+            background: #183153;
+            color: white;
+            cursor: pointer;
+        }
+
+        .task p { color: #666; }
+        .status { color: #2563eb; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Task Management</h1>
+    <p>업무를 등록하고 관리하는 서비스</p>
+
+    <form id="taskForm">
+        <h3>새 업무 등록</h3>
+        <input id="title" placeholder="업무 제목" required>
+        <textarea id="description"
+                  placeholder="업무 설명"></textarea>
+        <button type="submit">업무 등록</button>
+    </form>
+
+    <h2>업무 목록</h2>
+    <section id="tasks">불러오는 중...</section>
+</main>
+
+<script>
+    const taskList = document.getElementById("tasks");
+
+    async function loadTasks() {
+        try {
+            const res = await fetch("/api/tasks");
+
+            if (!res.ok) throw new Error("조회 실패");
+
+            const tasks = await res.json();
+
+            taskList.replaceChildren();
+
+            tasks.forEach(task => {
+                const article = document.createElement("article");
+                article.className = "task";
+
+                const title = document.createElement("h3");
+                title.textContent = task.title;
+
+                const description = document.createElement("p");
+                description.textContent = task.description;
+
+                const status = document.createElement("span");
+                status.className = "status";
+                status.textContent = task.status;
+
+                article.append(title, description, status);
+                taskList.append(article);
+            });
+
+        } catch (error) {
+            taskList.textContent = error.message;
+        }
+    }
+
+    document.getElementById("taskForm")
+        .addEventListener("submit", async event => {
+            event.preventDefault();
+
+            const data = {
+                title: document.getElementById("title").value,
+                description: document.getElementById("description").value
+            };
+
+            try {
+                const res = await fetch("/api/tasks", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!res.ok) throw new Error("등록 실패");
+
+                event.target.reset();
+                await loadTasks();
+
+            } catch (error) {
+                alert(error.message);
+            }
+        });
+
+    loadTasks();
+</script>
+</body>
+</html>
+
